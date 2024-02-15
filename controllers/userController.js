@@ -13,8 +13,8 @@ class UserController{
     }
 
     async createUser(req,res){
-        const {userName, password, department, role} = req.body;
-        if(!userName || !password || !department || !role){
+        const {userName, password, department} = req.body;
+        if(!userName || !password || !department){
             res.status(400).send("Bad Request")
         }else{
             let hashPassword = await bcrypt.hash(req.body.password, 10)
@@ -26,7 +26,6 @@ class UserController{
                     const newUser = new User({
                         userName,
                         department,
-                        role,
                         password:hashPassword
                     })
                     newUser.save()
@@ -53,8 +52,8 @@ class UserController{
                     const hashPassword = await bcrypt.compare(req.body.password,response.password)
                     if(hashPassword){
                         //log in success
-                        var token = jwt.sign({ userName: req.body.userName,_id:response._id,role:response.role }, process.env.TOKEN);
-                        res.status(201).send({msg:"success",result:{token,role:response.role,userInfo:response}})
+                        var token = jwt.sign({ userName: req.body.userName,_id:response._id }, process.env.TOKEN);
+                        res.status(201).send({msg:"success",result:{token,userInfo:response}})
                     }else{
                         //log in failed
                         res.status(400).send("Incorrect Password")

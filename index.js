@@ -26,7 +26,7 @@ mongoose.connect(process.env.MONGODB)
 
 const userRouter = require('./router/userRouter')
 const productRouter = require('./router/productRouter')
-const supplierRouter = require("./router/supplierRouter")
+const supplierRouter = require("./router/memberRouter")
 const locationRouter = require("./router/locationRouter")
 const stockRouter = require("./router/stockRouter")
 
@@ -35,7 +35,7 @@ app.use(cors())
 app.use(bodyParser.json())
 app.use('/api/user',userRouter)
 app.use('/api/product',productRouter)
-app.use('/api/supplier',supplierRouter)
+app.use('/api/member',supplierRouter)
 app.use('/api/location',locationRouter)
 app.use('/api/stock',stockRouter)
 

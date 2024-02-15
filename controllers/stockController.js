@@ -28,10 +28,14 @@ class ProductController{
     //         res.status(500).send({ msg: "Internal Server Error", error: error });
     //       });
     //   }
+     
     async getAllStocks(req, res) {
         const stocks = await Stock.find({}, { stockIn: 0, stockOut: 0 }).populate("product").sort({ name: 1 });
         res.status(200).send({ msg: "success", result: stocks });
       }
+
+
+
       async getAllStocksNew(req, res) {
         const aggregatedStocks = await Stock.aggregate([
             {
@@ -67,30 +71,29 @@ class ProductController{
           
         res.status(200).send({ msg: "success", result: aggregatedStocks });
       }
+
     async stockIn(req,res){
-        let {productType,productName,companyName,productId,supplierId,supplierDocNo,quantity,price,expiry,docNo,unit} = req.body;
+        // let {productType,productName,companyName,productId,supplierId,supplierDocNo,quantity,price,expiry,docNo,unit} = req.body;
+        let {docNo,department,itemCode,productId,quantity,expiry,unit} = req.body;
+
         console.log("Stock IN ----------")
         console.log(req.body)
-        if(!productType||!productName||!companyName||!productId||!supplierId||!supplierDocNo||!quantity||!price||!expiry||!docNo||!unit){
+        if(!docNo||!department||!itemCode||!productId||!quantity||!expiry||!unit){
             // res.status(400).send("Bad Request")
             res.status(400).send({ msg: "fill all required fields" });
         }else{
             quantity = parseInt(quantity)
             // price = parseInt(price)
-            price = parseFloat(price)
+            // price = parseFloat(price)
             let stockFind = await Stock.findOne({product:mongoose.Types.ObjectId(productId)})
             console.log("stockfind",stockFind)
             if(stockFind){
                 const newStockIn = new StockIn({
                     name:productName,
                     productId,
-                    companyName,
-                    productType,
+                    itemCode,
                     docNo,
-                    supplierDocNo,
-                    supplier:supplierId,
                     quantity,
-                    price,
                     expiry,
                     unit,
                     prevQuantity:stockFind.quantity
@@ -159,6 +162,8 @@ class ProductController{
         }
         
     }
+
+    
     async stockInUpdateQuantity(req,res){ //6450eb9087560398aa7377b9 //"Novacoc"
         // if(!req.body.id || req.body.quantity===null || !req.body.productName || !req.body.originalQuantity){ //originalquantity is the original quantity of stock In and quantity is the latest modiefied qunatity
         // res.status(400).send("Bad Request")

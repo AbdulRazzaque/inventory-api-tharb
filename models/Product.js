@@ -1,10 +1,15 @@
 const mongoose = require("mongoose")
 
 const productScheme = new mongoose.Schema({
-    name:{type:String,default:"",required:true},
-    companyName:{type:String,default:"",required:true},
-    type:{type:String,default:"",required:true},
-    unit:{type:String,default:"",required:true},
+    itemCode:{type:String,required:true,unique:true},
+    productName:{type:String,required:true},
+    unit:{type:String,required:true},
+    physicalLocation:{type:String,required:true},
+    sku:{type:String,required:true},
+    lotNumber:{type:String},
+    manufacturer:{type:String,required:true},
+    supplierName:{type:String,required:true},
+    addModel:{type:String,required:true},
 },{timestamps:true})
 
 const Product = new mongoose.model("Product",productScheme)

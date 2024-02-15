@@ -5,7 +5,7 @@ module.exports = isAdminAuth=(req,res,next)=>{
         res.status(402).send("Unauthorized Access")
     }else{
         decode = jwt.verify(req.headers.token, process.env.TOKEN);
-        if(!decode.userName || !decode._id || decode.role!=="admin"){
+        if(!decode.userName || !decode._id ){
             res.status(402).send("Unauthorized Access")
         }else{
             req.userDetails = decode

@@ -9,22 +9,27 @@ class ProductController{
     }
 
     async createProduct(req,res){
-        const {name,companyName,type,unit}=req.body;
-        if(!name || !companyName || !type || !unit){
+        const {itemCode,productName,unit,physicalLocation,sku,lotNumber,manufacturer,supplierName,addModel}=req.body;
+        if(!itemCode || !productName || !unit || !physicalLocation || !sku  || !manufacturer || !supplierName || !addModel){
             res.status(400).send("Data Missing")
         }
         else{
-            let newName = `${name} ${companyName} ${type} ${unit}`
-            Product.findOne({name:newName})
+            let newName = `${itemCode} ${productName} ${unit} ${physicalLocation} ${sku} ${lotNumber} ${manufacturer} ${supplierName} ${addModel}`
+            Product.findOne({itemCode:newName})
             .then(response=>{
                 if(response){
                     res.status(400).send("Product Already Exist")
                 }else{
                     const newProduct = new Product({
-                        name:newName,
-                        companyName,
-                        type,
-                        unit
+                        itemCode:newName,
+                        productName,
+                        unit,
+                        physicalLocation,
+                        sku,
+                        lotNumber,
+                        manufacturer,
+                        supplierName,
+                        addModel
                     })
                     newProduct.save()
                     .then(newProdResponse=>{
@@ -36,13 +41,13 @@ class ProductController{
         }
  }
     async updateProduct(req,res){
-        const {name,companyName,type,unit,productId}=req.body;
-        let newName = `${name} ${companyName} ${type} ${unit}`
-        if(!name || !companyName || !type || !unit){
+   
+        const {itemCode,productName,unit,physicalLocation,sku,lotNumber,manufacturer,supplierName,addModel}=req.body;
+        if(!itemCode || !productName || !unit || !physicalLocation || !sku  || !manufacturer || !supplierName || !addModel){
             res.status(400).send("Data Missing")
         }
         else{
-            Product.updateOne({_id:mongoose.Types.ObjectId(productId)},{$set:{name:newName,companyName,type,unit}})
+            Product.updateOne({_id: req.params.id},{$set:{itemCode,productName,unit,physicalLocation,sku,lotNumber,manufacturer,supplierName,addModel}})
             .then(response=>{
                 res.status(200).send({msg:"success",result:response})
             })
@@ -56,12 +61,12 @@ class ProductController{
         })
     }
 
-    async getAllProductType(req,res){
-            Product.find({},{type:1})
-            .then(response=>{
-                res.status(200).send({msg:"success",result:response})
-            })
-    }
+    // async getAllProductType(req,res){
+    //         Product.find({},{type:1})
+    //         .then(response=>{
+    //             res.status(200).send({msg:"success",result:response})
+    //         })
+    // }
 
     async deleteProduct(req, res, next) {
         let product;
@@ -75,24 +80,6 @@ class ProductController{
         }
         res.json(product);
       }
-
-    // async deleteProduct(req,res){
-    //     let {array} = req.body;
-    //     if(!req.body.array){
-    //         res.status(400).send("Data Missing")
-    //     }else{
-    //         array = array.map(item=>mongoose.Types.ObjectId(item))
-    //         Product.deleteMany({_id: { $in: array}})
-    //         .then(response=>{
-    //             if(response.deletedCount===1){
-    //                 res.status(200).send({msg:"success",result:"Deleted"})
-    //             }else{
-    //                 res.status(400).send("Not deleted")
-    //             }
-    //         })
-    //     }
-    // }
-
 
 }
 
