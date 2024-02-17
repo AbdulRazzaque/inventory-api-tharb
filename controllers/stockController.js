@@ -28,9 +28,13 @@ class ProductController{
     //         res.status(500).send({ msg: "Internal Server Error", error: error });
     //       });
     //   }
-     
     async getAllStocks(req, res) {
-        const stocks = await Stock.find({}, { stockIn: 0, stockOut: 0 }).populate("product").sort({ name: 1 });
+      const stocks = await Stock.find({}, { stockIn: 0, stockOut: 0 ,})
+        .populate("product").sort({name:1})
+        .populate({
+          path: "department"
+        });
+
         res.status(200).send({ msg: "success", result: stocks });
       }
 
@@ -86,12 +90,14 @@ class ProductController{
             // price = parseInt(price)
             // price = parseFloat(price)
             let stockFind = await Stock.findOne({product:mongoose.Types.ObjectId(productId)})
+
             console.log("stockfind",stockFind)
             if(stockFind){
                 const newStockIn = new StockIn({
-                    name:productName,
+                    name:req.body.productName,
                     productId,
                     itemCode,
+                    department:req.body.department,
                     docNo,
                     quantity,
                     expiry,
@@ -99,6 +105,7 @@ class ProductController{
                     prevQuantity:stockFind.quantity
                 })
                 const stockInResponse = await newStockIn.save()
+
                 let newExpiryArray = []
                 if(stockFind.expiryArray.length>0){
                     //update that element quantity
@@ -109,48 +116,51 @@ class ProductController{
                             if(moment.parseZone(i.expiry).local().format("DD/MM/YY")===moment.parseZone(expiry).local().format("DD/MM/YY")){
                                 i.prevQuantity = i.quantity
                                 i.quantity = i.quantity + quantity;
-                                i.price=price
+                                // i.price=price
                             }
                             return i;
                         })
                     }else{
                         //create new expiry element
                         newExpiryArray = stockFind.expiryArray;
-                        newExpiryArray.push({expiry:new Date(expiry),quantity,prevQuantity:0,price})
+                        newExpiryArray.push({expiry:new Date(expiry),quantity,prevQuantity:0,})
                     }
                     console.log("newexparray",newExpiryArray)
                 }else{
                     //create very first expiry element for stockout condition
-                    newExpiryArray = [{prevQuantity:stockFind.totalQuantity, quantity:stockFind.totalQuantity+quantity, expiry:new Date(expiry),price}]
+                    newExpiryArray = [{prevQuantity:stockFind.totalQuantity, quantity:stockFind.totalQuantity+quantity, expiry:new Date(expiry)}]
                 }
                 let totalQuantity = 0
                 newExpiryArray.map(i=>{
                     totalQuantity = totalQuantity + i.quantity
                 })
+                // update Stock in code
+
                 const stockUpdate = await Stock.updateOne({product:mongoose.Types.ObjectId(productId)},{$set:{expiryArray:newExpiryArray,totalQuantity},$push:{stockIn:stockInResponse._id}})
                 console.log(stockUpdate)
                 res.status(200).send({msg:'Product added successfully',result:stockInResponse})
             }else{
-                console.log("inside new stocks and stockin")
-                const newStockIn = new StockIn({
-                    name:productName,
-                    productId,
-                    companyName,
-                    productType,
-                    docNo,
-                    supplierDocNo,
-                    supplier:supplierId,
-                    quantity,
-                    price,
-                    expiry,
-                    unit
+               
+              console.log("inside new stocks and stockin")
+              
+              const newStockIn = new StockIn({
+                name:req.body.productName,
+                productId,
+                itemCode,
+                department:req.body.department,
+                docNo,
+                quantity,
+                expiry,
+                unit,
+                prevQuantity:stockFind?.quantity
                 })
                 const stockInResponse = await newStockIn.save()
                 const newStock = new Stock({
-                    name:productName,
+                    name:req.body.productName,
                     product:mongoose.Types.ObjectId(productId),
                     totalQuantity:quantity,
-                    expiryArray:[{expiry:new Date(expiry),quantity,prevQuantity:0,price}],
+                    department:req.body.department,
+                    expiryArray:[{expiry:new Date(expiry),quantity,prevQuantity:0}],
                     stockIn:[stockInResponse._id]
                 })
                 newStock.save()
@@ -798,7 +808,7 @@ class ProductController{
           
     }
       
-    async stockOuts(req, res) {
+    async stockOuts(req, res,next) {
         console.log("Stockout start--------------------------------- body",req.body)
         const stockOuts = req.body.stockOuts;
         const allStockOuts = [];

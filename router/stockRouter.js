@@ -6,7 +6,7 @@ const isUserAuth = require("../middlewares/isUserAuth")
 
 router.get('/getAllStocks',stockController.getAllStocks)
 router.get('/getAllStocksNew',stockController.getAllStocksNew)
-router.post('/stockIn',isUserAuth,stockController.stockIn)
+router.post('/stockIn',isUserAuth,stockController.stockIn) 
 router.get('/testRoute',stockController.testRoute)
 router.post('/getDocumentStockOut',isUserAuth,stockController.getDocumentStockOut)
 router.post('/getStockDoucments',isUserAuth,stockController.getStockDoucments)

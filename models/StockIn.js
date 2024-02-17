@@ -2,7 +2,7 @@ const mongoose = require("mongoose")
 
 const stockInScheme = new mongoose.Schema({
     docNo:{type:Number,default:1},
-    department:{type:String,default:""},
+    department:{type:String, required:true},
     itemCode:{type:String,default:""},
     productId:{type:mongoose.Types.ObjectId,ref:"Product"},
     quantity:{type:Number,default:0, required:true},
