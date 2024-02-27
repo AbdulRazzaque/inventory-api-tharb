@@ -32,55 +32,55 @@ class ProductController{
       const stocks = await Stock.find({}, { stockIn: 0, stockOut: 0 ,})
         .populate("product").sort({name:1})
         .populate({
-          path: "department"
+          path: "stockIn"
         });
 
-        res.status(200).send({ msg: "success", result: stocks });
+        res.status(200).send({ msg: "successfully", result: stocks });
       }
 
 
 
-      async getAllStocksNew(req, res) {
-        const aggregatedStocks = await Stock.aggregate([
-            {
-              $lookup: {
-                from: "products",
-                localField: "product",
-                foreignField: "_id",
-                as: "productDetails"
-              }
-            },
-            {
-              $unwind: "$productDetails"
-            },
-            {
-              $group: {
-                _id: "$name",
-                totalQuantity: { $sum: "$quantity" }, // New field to sum up the quantity
-                products: {
-                  $push: {
-                    product: "$productDetails",
-                    quantity: "$quantity",
-                    expiry: "$expiry",
-                    createdAt: "$createdAt",
-                    updatedAt: "$updatedAt",
-                  }
-                }
-              }
-            },
-            {
-              $sort: { _id: 1 }
-            }
-          ]);
+      // async getAllStocksNew(req, res) {
+      //   const aggregatedStocks = await Stock.aggregate([
+      //       {
+      //         $lookup: {
+      //           from: "products",
+      //           localField: "product",
+      //           foreignField: "_id",
+      //           as: "productDetails"
+      //         }
+      //       },
+      //       {
+      //         $unwind: "$productDetails"
+      //       },
+      //       {
+      //         $group: {
+      //           _id: "$name",
+      //           totalQuantity: { $sum: "$quantity" }, // New field to sum up the quantity
+      //           products: {
+      //             $push: {
+      //               product: "$productDetails",
+      //               quantity: "$quantity",
+      //               expiry: "$expiry",
+      //               createdAt: "$createdAt",
+      //               updatedAt: "$updatedAt",
+      //             }
+      //           }
+      //         }
+      //       },
+      //       {
+      //         $sort: { _id: 1 }
+      //       }
+      //     ]);
           
-        res.status(200).send({ msg: "success", result: aggregatedStocks });
-      }
+      //   res.status(200).send({ msg: "success", result: aggregatedStocks });
+      // }
 
     async stockIn(req,res){
         // let {productType,productName,companyName,productId,supplierId,supplierDocNo,quantity,price,expiry,docNo,unit} = req.body;
         let {docNo,department,itemCode,productId,quantity,expiry,unit} = req.body;
 
-        console.log("Stock IN ----------")
+        console.log("Stock IN -------")
         console.log(req.body)
         if(!docNo||!department||!itemCode||!productId||!quantity||!expiry||!unit){
             // res.status(400).send("Bad Request")
@@ -135,9 +135,8 @@ class ProductController{
                     totalQuantity = totalQuantity + i.quantity
                 })
                 // update Stock in code
-
                 const stockUpdate = await Stock.updateOne({product:mongoose.Types.ObjectId(productId)},{$set:{expiryArray:newExpiryArray,totalQuantity},$push:{stockIn:stockInResponse._id}})
-                console.log(stockUpdate)
+                console.log(stockUpdate,'stockUpdate')
                 res.status(200).send({msg:'Product added successfully',result:stockInResponse})
             }else{
                
@@ -164,8 +163,9 @@ class ProductController{
                     stockIn:[stockInResponse._id]
                 })
                 newStock.save()
+                // console.log(newStock,'newStock')
                 .then(newStockResponse=>{
-                    res.status(200).send({msg:'Product added successfully',result:stockInResponse})
+                    res.status(200).send({msg:'Product added successggfullygf',result:stockInResponse})
                 })  
             }
 
@@ -173,7 +173,7 @@ class ProductController{
         
     }
 
-    
+  
     async stockInUpdateQuantity(req,res){ //6450eb9087560398aa7377b9 //"Novacoc"
         // if(!req.body.id || req.body.quantity===null || !req.body.productName || !req.body.originalQuantity){ //originalquantity is the original quantity of stock In and quantity is the latest modiefied qunatity
         // res.status(400).send("Bad Request")
@@ -306,8 +306,6 @@ class ProductController{
         } catch (error) {
             console.log(error)
         }
-     
-        
     }
 
 
@@ -341,6 +339,7 @@ class ProductController{
                 })
         })
     }
+   
 
     async deleteStockOut(req,res){
         console.log(req.body)
@@ -810,8 +809,8 @@ class ProductController{
       
     async stockOuts(req, res,next) {
         console.log("Stockout start--------------------------------- body",req.body)
-        const stockOuts = req.body.stockOuts;
-        const allStockOuts = [];
+        // const stockOuts = req.body.stockOuts;
+        // const allStockOuts = [];
         for (let i = 0; i < stockOuts.length; i++) {
           const { unit, productName, productId, docNo, locationId, quantity, date, trainerName, doctorName, locationName,expiry,price,locationObject } = stockOuts[i];
           
