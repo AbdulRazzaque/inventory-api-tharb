@@ -17,14 +17,14 @@ class MemberController{
             })
             newSupplier.save()
             .then(response=>{
-                res.status(200).send({msg:"success",result:response})
+                res.status(200).send({msg:"Members added successfully.",result:response})
             })
             
         }
     }
 
     async getAllMember(req,res){
-        Member.find({})
+        Member.find({}).sort({_id:-1})
         .then(response=>{
             res.status(200).send({msg:"success",result:response})
         })
@@ -33,6 +33,7 @@ class MemberController{
         let product;
         try {
           product = await Member.findByIdAndRemove({ _id: req.params.id });
+         
           if (!product) {
             return next(new Error("Noting to delete"));
           }

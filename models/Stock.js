@@ -1,7 +1,7 @@
 const mongoose = require("mongoose")
 const stockScheme = new mongoose.Schema({
     name:{type:String,default:"",required:true},
-    // department:{type:String,required:true},
+    department:{type:String},
     product:{type:mongoose.Types.ObjectId,ref:"Product"},
     totalQuantity:{type:Number,default:0, required:true},
     expiryArray:[],
