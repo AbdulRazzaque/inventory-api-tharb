@@ -7,6 +7,7 @@ const stockScheme = new mongoose.Schema({
     expiryArray:[],
     stockIn:[{type:mongoose.Types.ObjectId,ref:"StockIn"}],
     stockOut:[{type:mongoose.Types.ObjectId,ref:"StockOut"}],
+    
     // Member:[{type:mongoose.Types.ObjectId,ref:"Member"}]
 },{timestamps:true})
 
