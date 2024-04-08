@@ -9,7 +9,8 @@ const productScheme = new mongoose.Schema({
     lotNumber:{type:String},
     manufacturer:{type:String,required:true},
     supplierName:{type:String,required:true},
-    addModel:{type:String,required:true},
+    addModel:{type:String},
+    department:{type:String,required:true},
 },{timestamps:true})
 
 const Product = new mongoose.model("Product",productScheme)

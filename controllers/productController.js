@@ -11,10 +11,11 @@ class ProductController{
 
 //    
 async createProduct(req, res) {
-    const { itemCode, productName, unit, physicalLocation, sku, lotNumber, manufacturer, supplierName, addModel } = req.body;
-    if (!itemCode || !productName || !unit || !physicalLocation || !sku || !manufacturer || !supplierName || !addModel) {
+    const { itemCode, productName, unit, physicalLocation, sku, lotNumber, manufacturer, supplierName, addModel ,department} = req.body;
+    if (!itemCode || !productName || !unit || !physicalLocation || !sku || !manufacturer || !supplierName || !department) {
         res.status(400).send("Data Missing");
-    } else {
+    }
+     else {
         let newName = `${itemCode} ${productName} ${unit} ${physicalLocation} ${sku} ${lotNumber} ${manufacturer} ${supplierName} ${addModel}`;
         try {
             const existingProduct = await Product.findOne({ itemCode: newName });
@@ -30,7 +31,9 @@ async createProduct(req, res) {
                     lotNumber,
                     manufacturer,
                     supplierName,
-                    addModel
+                    addModel,
+                    department
+
                 });
                 await newProduct.save();
                 res.status(201).send({msg:"Product Created Successfully"});
@@ -44,26 +47,42 @@ async createProduct(req, res) {
  
     async updateProduct(req,res){
    
-        const {itemCode,productName,unit,physicalLocation,sku,lotNumber,manufacturer,supplierName,addModel}=req.body;
-        if(!itemCode || !productName || !unit || !physicalLocation || !sku  || !manufacturer || !supplierName || !addModel){
+        const {itemCode,productName,unit,physicalLocation,sku,lotNumber,manufacturer,supplierName,addModel,department}=req.body;
+        if(!itemCode || !productName || !unit || !physicalLocation || !sku  || !manufacturer || !supplierName ||!department){
             res.status(400).send("Data Missing")
         }
         else{
-            Product.updateOne({_id: req.params.id},{$set:{itemCode,productName,unit,physicalLocation,sku,lotNumber,manufacturer,supplierName,addModel}})
+            Product.updateOne({_id: req.params.id},{$set:{itemCode,productName,unit,physicalLocation,sku,lotNumber,manufacturer,supplierName,addModel,department}})
             .then(response=>{
                 res.status(200).send({msg:"success",result:response})
             })
         }
     }
             
-    async getAllProducts(req,res){
-        Product.find({}).sort({_id:-1})
-        .then(response=>{
-            res.status(200).send({msg:"success",result:response})
-        })
+    // async getAllProducts(req,res){
+    //     const {departmentName} = req.params;
+    //     Product.find({department:departmentName || ""}).sort({_id:-1})
+    //     .then(response=>{
+    //         res.status(200).send({msg:"success",result:response})
+    //     })
+    // }
+
+    async getAllProducts(req, res) {
+        const { departmentName } = req.params;
+        let query = {};
+        
+        if (departmentName && departmentName !== 'All') {
+            query = { department: departmentName };
+        }
+        
+        Product.find(query).sort({_id: -1})
+            .then(response => {
+                res.status(200).send({ msg: "success", result: response });
+            })
+            .catch(error => {
+                res.status(500).send({ msg: "error", error: error.message });
+            });
     }
-
-
     async deleteProduct(req, res, next) {
         let product;
         try {

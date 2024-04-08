@@ -22,7 +22,7 @@ class ProductController{
           .populate({
             path: "stockIn"
           });
-      
+       
         res.status(200).send({ msg: "successfully", result: stocks });
       }
 

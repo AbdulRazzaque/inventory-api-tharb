@@ -4,7 +4,7 @@ const productController = require('../controllers/productController')
 const isAdminAuth = require("../middlewares/isAdminAuth")
 const isUserAuth = require("../middlewares/isUserAuth")
 
-router.get('/getAllProducts',productController.getAllProducts)
+router.get('/getAllProducts/:departmentName?',productController.getAllProducts)
 // router.get('/getAllProductType',productController.getAllProductType)
 // router.post('/createProduct',isAdminAuth,productController.createProduct)
 router.post('/createProduct',productController.createProduct)

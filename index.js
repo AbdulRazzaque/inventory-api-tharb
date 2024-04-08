@@ -29,6 +29,7 @@ const productRouter = require('./router/productRouter')
 const supplierRouter = require("./router/memberRouter")
 const locationRouter = require("./router/locationRouter")
 const stockRouter = require("./router/stockRouter")
+const orderRouter = require("./router/orderRouter")
 
 const app = express()
 app.use(cors())
@@ -38,6 +39,7 @@ app.use('/api/product',productRouter)
 app.use('/api/member',supplierRouter)
 app.use('/api/location',locationRouter)
 app.use('/api/stock',stockRouter)
+app.use('/api/order',orderRouter)
 
 
 // async function main() {
