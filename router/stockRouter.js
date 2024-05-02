@@ -30,6 +30,9 @@ router.post('/getStockReport',isUserAuth,stockController.getStockReport)
 router.get('/currentStockList',isUserAuth,stockController.currentStockList)
 router.post('/getSummaryStockout',isUserAuth,stockController.getSummaryStockout)
 
+// ===============================Abdur Rahim Discard=============================================================
+router.post('/discardItems',isUserAuth,stockController.discardItems)
+router.post('/deleteDiscardItems',isUserAuth,stockController.deleteDiscardItems)
 
 // ----------------------------- Abdur Razzaque Changes----------------------
 router.post('/stockInUpdateQuantity/:id',stockController.stockInUpdateQuantity)
@@ -37,5 +40,6 @@ router.post('/stockOutUpdateQuantity/:id',stockController.stockOutUpdateQuantity
 router.delete('/stockInDelete/:id',stockController.stockInDelete)
 router.delete('/stockOutDelete/:id',stockController.stockOutDelete)
 router.put('/updatestockIn/:name',stockController.updatestockIn)
+
 // router.delete('/deleteStockinfo/:name',stockController.deleteStockinfo)
 module.exports=router; 

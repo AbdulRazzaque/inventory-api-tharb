@@ -7,6 +7,7 @@ const bcrypt = require('bcrypt');
 const date = require('date-and-time');
 const jwt = require("jsonwebtoken")
 const moment = require("moment")
+const Discard = require('../models/DiscardedItem')
 
 class ProductController{
     async getProduct (req,res){
@@ -645,65 +646,55 @@ async  updateStockAndExpiryArray(productId, oldQuantity, newQuantity, expiry) {
     }
    
 
-    async deleteStockOut(req,res){
-        console.log(req.body)
-        const expiryDateToUpdate = new Date(req.body.expiry); // Replace with the actual expiry date
-        const increaseQuantityBy = req.body.quantity; // Replace with the amount you want to decrease
-        StockOut.deleteOne({_id:mongoose.Types.ObjectId(req.body.stockOutId)})
-        .then(async response=>{
-            console.log(response)
-        let prevQ = null
-        const singleStock = await Stock.findOne({name: req.body.productName})
-            console.log(singleStock)
-            if(singleStock){
-                if(singleStock.expiryArray.length>0){
-                    prevQ = singleStock.expiryArray.filter(i=>i.expiry.toString()===expiryDateToUpdate.toString())[0].quantity
+    async deleteStockOut(req, res) {
+        console.log(req.body,'delete stockout')
+        try {
+            const { stockOutId, productName, expiry, quantity } = req.body;
+    
+            // Check if the stock-out record exists
+            const existingStockOut = await StockOut.findById(stockOutId);
+            if (!existingStockOut) {
+                throw new Error("Stock-out not found");
+            }
+    
+            // Delete the stock-out record
+            await StockOut.deleteOne({ _id: stockOutId });
+    
+            // Find the stock record
+            const stock = await Stock.findOne({ name: productName });
+    
+            if (stock) {
+                // Find the expiry array item for the given expiry date
+                const expiryArrayItem = stock.expiryArray.find(item => item.expiry.toString() === new Date(expiry).toString());
+                if (expiryArrayItem) {
+                    // Increase the quantity by the deleted quantity
+                    console.log("Before update:", JSON.stringify(expiryArrayItem));
+                    expiryArrayItem.quantity += quantity;
+                    stock.markModified('expiryArray');
+                    console.log("After update:", JSON.stringify(expiryArrayItem));
+                
+                    // Update the total quantity in the stock record
+                    stock.totalQuantity += quantity;
+                
+                    // Remove the stock-out reference
+                    stock.stockOut = stock.stockOut.filter(id => id.toString() !== stockOutId);
+                
+                    // Save the updated stock record
+                    await stock.save();
+                    
+                    res.status(200).send({ msg: "success", result: "Successfully Removed Stock-out" });
                 }
+                 else {
+                    res.status(404).send({ msg: "error", result: "Expiry array item not found" });
+                }
+            } else {
+                res.status(404).send({ msg: "error", result: "Stock not found" });
             }
-            console.log("prevq",prevQ)
-            if(prevQ){
-                Stock.updateOne(
-                    {
-                      name: req.body.productName,
-                      'expiryArray.expiry': expiryDateToUpdate
-                    },
-                    {
-                      $set: {
-                        'expiryArray.$.prevQuantity': req.body.quantity // Assigning the current quantity to prevQuantity
-                      },
-                      $inc: {
-                        'expiryArray.$.quantity':increaseQuantityBy,
-                        'totalQuantity':increaseQuantityBy
-                      },
-                      $pull: {
-                        'stockOut': mongoose.Types.ObjectId(req.body.stockOutId)
-                      }
-                    }
-                  )
-                        .then(stockresponse=>{
-                            console.log(stockresponse)
-                            res.status(200).send({msg:"success",result:"Successfully Removed Stockout"}) 
-                        })
-            }else{
-                Stock.updateOne(
-                    {
-                      name: req.body.productName,
-                    },
-                    {
-                        'totalQuantity': 0,
-                        $pull: {
-                            'stockOut': mongoose.Types.ObjectId(req.body.stockOutId)
-                          }
-                    }
-                  )
-                        .then(stockresponse=>{
-                            console.log(stockresponse)
-                            res.status(200).send({msg:"success",result:"Successfully Removed Stockout"}) 
-                        })
-            }
-
-        })
-    } 
+        } catch (error) {
+            console.error("Error deleting stock-out:", error);
+            res.status(500).send({ msg: "error", result: "Internal Server Error" });
+        }
+    }
 
     async getPrevStockOutInfo(req, res) {
         console.log(req.body);
@@ -1408,6 +1399,144 @@ async  updateStockAndExpiryArray(productId, oldQuantity, newQuantity, expiry) {
           
     }
 
+
+    async discardItems(req, res) {
+   
+        const { unit, productName, productId, docNo, department, quantity, date, memberName, expiry, price, stockOutId } = req.body;
+    
+        if (!docNo || !department || !productId || !quantity || !expiry || !memberName) {
+            res.status(400).send("Bad Request");
+            return;
+        }
+    
+        let parsedQuantity = parseInt(quantity);
+        let newExpiryArray = []
+        let totalQuantity = 0
+        let stockIndoc = null
+        let existingStock = null
+        let newStock = null;
+        // If the parsed quantity is positive, convert it to negative
+        if (parsedQuantity > 0) {
+            parsedQuantity = -parsedQuantity;
+        }
+        if (!expiry) {
+            //new stock
+            newStock = new Stock({
+                name: productName,
+                product: mongoose.Types.ObjectId(productId),
+                totalQuantity: parsedQuantity,
+                expiryArray: [],
+                department: department
+            })
+        } else {
+            existingStock = await Stock.findOne({
+                name: productName,
+                department: department,
+                "expiryArray": {
+                    $elemMatch: {
+                        "expiry": new Date(expiry)
+                    }
+                }
+            });
+            stockIndoc = await StockIn.findOne({ name: productName, department: department }).sort({ createdAt: -1 })
+        }
+    
+        if (existingStock) {
+            // Create a new expiry array object if it exist
+            if (expiry) {
+                newExpiryArray = existingStock.expiryArray.map(item => {
+                    console.log(item.expiry, new Date(expiry))
+                    if (item.expiry.toString() === new Date(expiry).toString()) {
+                        item.prevQuantity = item.quantity
+                        item.quantity = item.quantity - quantity
+                    }
+                    return item
+                });
+            }
+            console.log("Existing Stock-----StockInDoc", existingStock, stockIndoc)
+        }
+    
+        // Create a new stock-out record
+        const newStockOut = new Discard({
+            name: productName,
+            docNo,
+            department,
+            quantity,
+            date,
+            memberName,
+            unit,
+            productId: mongoose.Types.ObjectId(productId),
+            expiry: expiry ? new Date(expiry) : null,
+            stockInPrice: stockIndoc ? stockIndoc.price : 0,
+            prevQuantity: existingStock ? existingStock.totalQuantity : 0,
+            price: parseFloat(price)
+        });
+    
+        const DiscardResponse = await newStockOut.save();
+        console.log("DiscardResponse response------", DiscardResponse)
+        if (!expiry && newStock) {
+            newStock.stockOut = [DiscardResponse._id]
+            let newStockAdd = await newStock.save()
+            console.log("new stock added-----", newStockAdd)
+    
+        } else {
+            newExpiryArray.map(item => {
+                totalQuantity = totalQuantity + item.quantity
+            })
+            const stockUpdate = await Stock.updateOne({ product: mongoose.Types.ObjectId(productId), department: department }, { $set: { expiryArray: newExpiryArray, totalQuantity }, 
+            $push: { Discard: DiscardResponse._id } })
+            console.log("currentSTockupdate-----", stockUpdate)
+        }
+    
+        res.status(200).send({ msg: 'success', result: DiscardResponse });
+    }
+
+    async deleteDiscardItems(req, res) {
+        try {
+            const { discardId, productName, expiry, quantity } = req.body;
+    
+            // Check if the discard record exists
+            const existingDiscard = await Discard.findById(discardId);
+            if (!existingDiscard) {
+                throw new Error("Discard record not found");
+            }
+    
+            // Delete the discard record
+            await Discard.deleteOne({ _id: discardId });
+    
+            // Find the stock record
+            const stock = await Stock.findOne({ name: productName });
+            if (!stock) {
+                return res.status(404).send({ msg: "error", result: "Stock not found" });
+            }
+    
+            // Find the expiry array item for the given expiry date
+            const expiryDate = new Date(expiry);
+            const expiryArrayItem = stock.expiryArray.find(item => new Date(item.expiry).getTime() === expiryDate.getTime());
+            if (expiryArrayItem) {
+                // Increase the quantity by the deleted discard quantity
+                expiryArrayItem.quantity += quantity;
+                stock.markModified('expiryArray');  // Mark the expiryArray as modified to ensure updates
+    
+                // Update the total quantity in the stock record
+                stock.totalQuantity += quantity;
+    
+                // Remove the discard reference if there is a reference array
+                if (stock.discard) {
+                    stock.discard = stock.discard.filter(id => id.toString() !== discardId.toString());
+                }
+    
+                // Save the updated stock record
+                await stock.save();
+                res.status(200).send({ msg: "success", result: "Successfully removed discard record and updated stock" });
+            } else {
+                res.status(404).send({ msg: "error", result: "Expiry array item not found" });
+            }
+        } catch (error) {
+            console.error("Error deleting discard record:", error);
+            res.status(500).send({ msg: "error", result: "Internal Server Error" });
+        }
+    }
       
 
 }

@@ -1,18 +1,32 @@
-const mongoose = require("mongoose")
+const mongoose = require("mongoose");
 
-const orderScheme = new mongoose.Schema({
-    refNo:{type:Number,unique:true},
-    productId:[{type:mongoose.Types.ObjectId,ref:"Product"}],
-    productName:[{type:String}],
-    memberId:{type:mongoose.Types.ObjectId,ref:"Member"},
-    memberName:{type:String,},
-    requiredQuantity:[{type:Number}],
-    status:{type:String,default:"in progress"},
+const Schema = mongoose.Schema;
 
+const orderSchema = new Schema({
+  memberId: {
+    type: Schema.Types.ObjectId,
+    ref: "Member", // Reference to the Member model
+  },
+  memberName: String,
+  status: {
+    type: String,
+    default: 'In Progress' // Set default value to 'In Progress'
+},
+  products: [
+    {
+      productId: {
+        type: Schema.Types.ObjectId,
+        ref: "Product", // Reference to the Product model
+      },
+    },
+  ], 
 
-},{timestamps:true})
+  refNo: Number,
+  itemnumber:String,
+  requiredQuantity: [],
+  productName: [], 
+},{timestamps:true});
 
-const Order = new mongoose.model("Order",orderScheme)
-module.exports = Order
+const Order = mongoose.model("Order", orderSchema);
 
-
+module.exports = Order;
